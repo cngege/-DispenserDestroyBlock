@@ -1,25 +1,25 @@
 {
     "format_version": 2,
-    "tooth": "my-mod",
-    "version": "0.0.0",
+    "tooth": "github.com/cngege/DispenserDestroyBlock",
+    "version": "0.0.1",
     "info": {
-        "name": "My Mod Name",
-        "description": "My Mod Description",
-        "author": "My Name",
+        "name": "DispenserDestroyBlock",
+        "description": "发射器激活时可使用工具破坏方块",
+        "author": "CNGEGE",
         "tags": [
             "levilamina",
             "mod"
         ]
     },
-    "asset_url": "My Asset Url",
+    "asset_url": "https://github.com/cngege/DispenserDestroyBlock/releases/download/v$(version)/DispenserDestroyBlock-windows-x64.zip",
     "prerequisites": {
-        "github.com/LiteLDev/LeviLamina": "My LeviLamina Dependency Version"
+        "github.com/LiteLDev/LeviLamina": "0.13.x"
     },
     "files": {
         "place": [
             {
-                "src": "my-mod/*",
-                "dest": "plugins/my-mod/"
+                "src": "DispenserDestroyBlock/*",
+                "dest": "plugins/DispenserDestroyBlock/"
             }
         ]
     }
