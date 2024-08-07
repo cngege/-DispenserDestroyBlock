@@ -5,8 +5,8 @@
 #include "ll/api/mod/RegisterHelper.h"
 
 #include <ll/api/service/Bedrock.h>
+#include <ll/api/Config.h>
 
-#include <nlohmann/json.hpp>
 #include <ll/api/memory/Hook.h>
 #include <mc/world/Container.h>
 #include <mc/world/level/BlockSource.h>
@@ -19,6 +19,12 @@
 #include <mc/nbt/CompoundTag.h>
 
 #include <direct.h>
+#include "Config.h"
+
+my_mod::Config config;
+
+
+/*
 
 using namespace nlohmann;
 
@@ -29,8 +35,7 @@ json config = R"(
     "instant_destruction" : false,
     "stay_in_the_Dispenser" : true,
     "consume_durable" : true,
-    "destroy":
-		{
+    "destroy":{
 			"minecraft:iron_pickaxe" : 
                 {
                     "minecraft:stone" : 
@@ -97,7 +102,7 @@ json config = R"(
 )"_json;
 
 std::string configpath = "./plugins/DispenserDestroyBlock/";
-
+*/
 
 BlockPos Vec3_toBlockPos(Vec3* v) {
     return BlockPos((int)std::floor((double)v->x), (int)std::floor((double)v->y), (int)std::floor((double)v->z));
@@ -124,25 +129,27 @@ LL_TYPE_INSTANCE_HOOK(
     // 发射器对着的方块 名称
     auto blockN = a2->getBlock(Vec3_toBlockPos(a5)).getTypeName();
     // 如果配置文件中对该物品有行为指定
-    if (config["destroy"].contains(itemN)) {
+    auto destroyItem = config.destroy.find(itemN);
+    if (destroyItem != config.destroy.end()) {
         // 如果配置文件指定，发射器对着的方块是允许该发射物破坏的方块
-        if (config["destroy"][itemN].contains(blockN)) {
+        auto destroyBlockItem = (*destroyItem).second.find(blockN);
+        if(destroyBlockItem != (*destroyItem).second.end()) {
             bool isdestroy = false;
-            if (config["destroy"][itemN][blockN]["dropitem"] == "") {
+            if ((*destroyBlockItem).second.dropitem == "") {
                 isdestroy = a2->getLevel().destroyBlock(*a2, Vec3_toBlockPos(a5), true);
             } else {
                 isdestroy = a2->getLevel().destroyBlock(*a2, Vec3_toBlockPos(a5), false);
                 
                 auto item = ItemStack(
-                    std::string(config["destroy"][itemN][blockN]["dropitem"]),
-                    config["destroy"][itemN][blockN]["count"]
+                    std::string((*destroyBlockItem).second.dropitem),
+                    (*destroyBlockItem).second.count
                 );
                 ll::service::getLevel()->getSpawner().spawnItem(*a2, item, 0, *a5, a2->getDimensionId());
                 //Level::spawnItem(*a5, a2->getDimensionId(), item);
             }
 
             // 如果破坏成功，并且要求消耗耐久
-            if (isdestroy && config["consume_durable"] == true) {
+            if (isdestroy && config.consume_durable == true) {
                 // auto maxduration = a5->getMaxUseDuration();
                 auto damage    = itemstack->getDamageValue();
                 auto maxdamage = itemstack->getMaxDamage();
@@ -162,7 +169,7 @@ LL_TYPE_INSTANCE_HOOK(
             return true;
         }
 
-        if (config["stay_in_the_Dispenser"]) {
+        if (config.stay_in_the_Dispenser) {
             return true;
         }
     }
@@ -183,6 +190,20 @@ MyMod& MyMod::getInstance() { return *instance; }
 bool MyMod::load() {
     getSelf().getLogger().debug("Loading...");
 
+
+
+    const auto& configFilePath = getSelf().getConfigDir() / "config.json";
+    try {
+        if(!ll::config::loadConfig(config, configFilePath))
+            getSelf().getLogger().warn("读取配置文件 {} 失败，将写入默认配置文件。", configFilePath);
+        if(!ll::config::saveConfig(config, configFilePath)) getSelf().getLogger().error("无法保存默认配置文件至 {}", configFilePath);
+    }
+    catch(...) {
+        getSelf().getLogger().warn("读取配置文件 {} 失败，将写入默认配置文件。", configFilePath);
+        if(!ll::config::saveConfig(config, configFilePath)) getSelf().getLogger().error("无法保存默认配置文件至 {}", configFilePath);
+    }
+    /*
+    
     if (_access(configpath.c_str(), 0) == -1) // 表示配置文件所在的文件夹不存在
     {
         if (_mkdir(configpath.c_str()) == -1) {
@@ -202,7 +223,7 @@ bool MyMod::load() {
         c << config.dump(2);
         c.close();
     }
-    
+    */
     return true;
 }
 
